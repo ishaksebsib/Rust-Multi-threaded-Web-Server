@@ -2,6 +2,8 @@ use std::{
     fs::File,
     io::{Read, Write},
     net::{TcpListener, TcpStream},
+    thread,
+    time::Duration,
 };
 
 fn main() {
@@ -17,8 +19,13 @@ fn handle_connection(mut stream: TcpStream) {
     stream.read(&mut buffer).unwrap();
 
     // check is the request is to main page (url+/) else response with 404
-    let get = b"GET / HTTP/1.1\r\n";
-    let response = if buffer.starts_with(get) {
+    let route_home = b"GET / HTTP/1.1\r\n";
+    let route_sleep = b"GET /sleep HTTP/1.1\r\n";
+
+    let response = if buffer.starts_with(route_home) {
+        create_response("hello.html", "200 OK")
+    } else if buffer.starts_with(route_sleep) {
+        thread::sleep(Duration::from_secs(5));
         create_response("hello.html", "200 OK")
     } else {
         create_response("404.html", "404 Not Found")
