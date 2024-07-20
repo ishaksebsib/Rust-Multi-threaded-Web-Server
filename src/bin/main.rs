@@ -1,3 +1,4 @@
+use multi_threaded_web_server::ThreadPool;
 use std::{
     fs::File,
     io::{Read, Write},
@@ -8,14 +9,17 @@ use std::{
 
 fn main() {
     let listener = TcpListener::bind("127.0.0.1:7878").unwrap();
+    let pool = ThreadPool::new(4);
 
+    println!("Server is running on http://127.0.0.1:7878");
     for stream in listener.incoming() {
         let stream = stream.unwrap();
-        thread::spawn(|| {
+        pool.excute(|| {
             handle_connection(stream);
         });
     }
 }
+
 fn handle_connection(mut stream: TcpStream) {
     let mut buffer = [0; 512];
     stream.read(&mut buffer).unwrap();
@@ -27,7 +31,7 @@ fn handle_connection(mut stream: TcpStream) {
     let response = if buffer.starts_with(route_home) {
         create_response("hello.html", "200 OK")
     } else if buffer.starts_with(route_sleep) {
-        thread::sleep(Duration::from_secs(5));
+        thread::sleep(Duration::from_secs(15));
         create_response("hello.html", "200 OK")
     } else {
         create_response("404.html", "404 Not Found")
